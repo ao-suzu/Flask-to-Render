@@ -23,7 +23,20 @@ class YouTubeDLWeb:
         opts = {
             'outtmpl': f'{output_dir}/{template}',
             'format': format_map.get(format_type, "best"),
-            'progress_hooks': [self.progress_hook]
+            'progress_hooks': [self.progress_hook],
+            # Bot検出回避設定
+            'extractor_args': {
+                'youtube': {
+                    'skip': ['hls', 'dash'],
+                    'player_skip': ['js'],
+                }
+            },
+            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'referer': 'https://www.youtube.com/',
+            'sleep_interval': 1,
+            'max_sleep_interval': 5,
+            'ignoreerrors': False,
+            'no_warnings': False
         }
         
         if format_type == "MP3":
@@ -65,7 +78,18 @@ class YouTubeDLWeb:
             
             # Get total files count
             try:
-                with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+                info_opts = {
+                    'quiet': True,
+                    'extractor_args': {
+                        'youtube': {
+                            'skip': ['hls', 'dash'],
+                            'player_skip': ['js'],
+                        }
+                    },
+                    'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                    'referer': 'https://www.youtube.com/',
+                }
+                with yt_dlp.YoutubeDL(info_opts) as ydl:
                     info = ydl.extract_info(url, download=False)
                     self.total_files = len(list(info['entries'])) if 'entries' in info else 1
                     video_title = info.get('title', 'video')
