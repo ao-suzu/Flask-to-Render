@@ -4,7 +4,20 @@ import yt_dlp
 import os
 import threading
 import time
+import base64
 from datetime import datetime
+
+# Render用: 環境変数からcookies.txtを復元
+cookies_b64 = os.getenv("COOKIES_B64")
+if cookies_b64:
+    try:
+        with open("cookies.txt", "wb") as f:
+            f.write(base64.b64decode(cookies_b64))
+        print("✅ Cookies restored from environment variable")
+    except Exception as e:
+        print(f"❌ Failed to restore cookies: {e}")
+else:
+    print("ℹ️ No COOKIES_B64 environment variable found")
 
 app = Flask(__name__)
 
@@ -24,6 +37,8 @@ class YouTubeDLWeb:
             'outtmpl': f'{output_dir}/{template}',
             'format': format_map.get(format_type, "best"),
             'progress_hooks': [self.progress_hook],
+            # Cookies設定（最優先）
+            'cookiefile': './cookies.txt' if os.path.exists('./cookies.txt') else None,
             # Bot検出回避設定
             'extractor_args': {
                 'youtube': {
@@ -80,6 +95,7 @@ class YouTubeDLWeb:
             try:
                 info_opts = {
                     'quiet': True,
+                    'cookiefile': './cookies.txt' if os.path.exists('./cookies.txt') else None,
                     'extractor_args': {
                         'youtube': {
                             'skip': ['hls', 'dash'],
