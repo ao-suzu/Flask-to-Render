@@ -27,15 +27,23 @@ class YouTubeDLWeb:
         self.current_download = None
     
     def get_download_options(self, output_dir, quality, format_type, url):
-        quality_map = {"最高画質": "best", "720p": "best[height<=720]", "480p": "best[height<=480]"}
-        format_map = {"MP4": quality_map.get(quality, "best"), "MP3": "bestaudio/best"}
-        
         is_playlist = 'playlist' in url or 'list=' in url
         template = '%(playlist_index)03d - %(title)s.%(ext)s' if is_playlist else '%(title)s.%(ext)s'
         
+        # より柔軟なフォーマット選択（フォールバック付き）
+        if format_type == "MP3":
+            format_selector = "bestaudio/best"
+        else:  # MP4
+            if quality == "720p":
+                format_selector = "(best[height<=720]/best[height<=1080]/best)[ext=mp4]/(best[height<=720]/best[height<=1080]/best)/best"
+            elif quality == "480p":
+                format_selector = "(best[height<=480]/best[height<=720]/best)[ext=mp4]/(best[height<=480]/best[height<=720]/best)/best"
+            else:  # Best
+                format_selector = "best[ext=mp4]/best/worst"
+        
         opts = {
             'outtmpl': f'{output_dir}/{template}',
-            'format': format_map.get(format_type, "best"),
+            'format': format_selector,
             'progress_hooks': [self.progress_hook],
             # Cookies設定（最優先）
             'cookiefile': './cookies.txt' if os.path.exists('./cookies.txt') else None,
@@ -104,6 +112,7 @@ class YouTubeDLWeb:
                     },
                     'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
                     'referer': 'https://www.youtube.com/',
+                    'format': 'best/worst'  # 情報取得用の柔軟なフォーマット
                 }
                 with yt_dlp.YoutubeDL(info_opts) as ydl:
                     info = ydl.extract_info(url, download=False)
